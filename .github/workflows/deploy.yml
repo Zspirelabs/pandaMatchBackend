@@ -3,6 +3,7 @@ name: Deploy Function
 on:
   push:
     branches:
+      - main
       - production
       - beta
       - dev-ayush
