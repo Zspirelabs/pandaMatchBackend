@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
     // Extract query parameters and client ID from request headers
     const url = new URL(req.url);
     const requestQuery = url.searchParams;
-    const user_id = req.headers.get("X-Clinet-Id");
+    const user_id = req.headers.get("X-Client-Id");
 
     // API call to Discolike service
     const response = await axiod.get("https://api.discolike.com/v1/discover", {
