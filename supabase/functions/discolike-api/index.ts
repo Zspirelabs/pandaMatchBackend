@@ -59,8 +59,8 @@ Deno.serve(
       if (response.status === 200) {
         // if 200 logging
 		const serializedParams = paramsSerializer(params);
-		console.log("Response From Disco Like", response.data);
-		console.log("Request Sent To Disco Like", {
+		console.log("Response From Discolike", response.data);
+		console.log("Request Sent To Discolike", {
 			"Params": params,
 			"Params Serialized": serializedParams,
 			"Headers": {
