@@ -4,7 +4,7 @@ const axiosInstance = axiod.create()
 
  axiosInstance.interceptors.request.use(
 	(config) => {
-		console.log(`Making request to: ${config.url}, ${config}`)
+		console.log(`Making request to: ${config.url}`)
 		return config
 	},
 	(error) => {

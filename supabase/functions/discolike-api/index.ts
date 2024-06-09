@@ -1,9 +1,9 @@
+// deno-lint-ignore-file no-explicit-any
 import { deductCredits } from "./deductCredits.ts"
 import { corsHeaders } from "../_shared/cors.ts"
-// import axiod from "https://deno.land/x/axiod@0.26.2/mod.ts"
 import axiosInstance from "./axiosInstance.ts";
 
-const paramsSerializer = (params) => {
+const paramsSerializer = (params: any) => {
 	const searchParams = new URLSearchParams()
 
 	for (const key in params) {
@@ -19,7 +19,7 @@ const paramsSerializer = (params) => {
 	return searchParams.toString()
 }
 
-Deno.serve(async (req) => {
+Deno.serve({ port: 8000 }, async (req: Request) => {
 		if (req.method === "OPTIONS") {
 			return new Response(null, {
 				status: 204,
@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
 			})
 		}
 
-		if (req.method !== "GET" && req.method !== "POST") {
+		if (!(req.method === "POST")) {
 			return new Response("Method Not Allowed", {
 				status: 405,
 				headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -105,7 +105,6 @@ Deno.serve(async (req) => {
 			}
 		}
 	},
-	{ port: 8000 }
 )
 
 console.log("Server is running on http://localhost:8000")

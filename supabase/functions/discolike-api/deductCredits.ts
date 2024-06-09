@@ -8,12 +8,13 @@ export const deductCredits = async (
   console.log("User ID:", user_id);
   try {
 
-    const { data: userData, error: fetchError } = await supabaseClient
+    const { data: userData , error: fetchError } = await supabaseClient
 			.from("user_info")
 			.select("credits")
-			.eq("user_id", user_id);
+			.eq("user_id", user_id)
+      .single()
 
-      
+    // console.log(userData)
     if (fetchError) {
       console.error("Error fetching user data:", fetchError);
       throw new Error("Error fetching user data");
@@ -25,7 +26,7 @@ export const deductCredits = async (
 
     // Calculate new credit amount
     const newCredits = parseInt(userData.credits) - creditsToDeduct;
-    console.log("New Credits:", newCredits, "Old Credits:", userData.credits);
+    console.log("New Credits:", newCredits, "Old Credits:", userData.credits)
 
     if (newCredits < 0) {
       throw new Error("Insufficient credits");
