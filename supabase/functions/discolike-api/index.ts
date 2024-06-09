@@ -56,6 +56,11 @@ Deno.serve(async (req) => {
 			const data = response.data
 
 			if (response.status === 200) {
+
+				// if 200 logging 
+				const serializedParams = paramsSerializer(params);
+				console.log("Response From Disco Like" response.data)
+				console.log("Request Sent To Disco Like", "Params":params, "Headers":headers, "Serialized Params": serializedParams)
 				const creditAmount = params.nl_match ? 2 : 1
 				console.log("Credit Amount:", creditAmount)
 				try {
