@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { deductCredits } from "./deductCredits.ts"
 import { corsHeaders } from "../_shared/cors.ts"
-import axiosInstance from "./axiosInstance.ts";
+import axiosInstance from "../_shared/axiosInstance.ts";
 
 const paramsSerializer = (params: any) => {
 	const searchParams = new URLSearchParams()
