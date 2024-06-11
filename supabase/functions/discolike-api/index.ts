@@ -36,23 +36,23 @@ Deno.serve({ port: 8000 }, async (req: Request) => {
 			})
 		}
 
-		try {
-			const body = await req.json()
-			const { params, user_id } = body
-			
-			const response = await axiosInstance.get(
-				"https://api.discolike.com/v1/discover",
-				{
-					params: params,
-					paramsSerializer: paramsSerializer,
-					withCredentials: true,
-					headers: {
-						"x-discolike-key": "5130dbdc-9bbb-4254-94d8-25d8b4a8ee1e",
-						"X-Client-Id": user_id,
-					},
-				}
-			)
-			const data = response.data
+    try {
+      const body = await req.json();
+      const { params, user_id } = body;
+
+      const response = await axiosInstance.get(
+        "https://api.discolike.com/v1/discover",
+        {
+          params: params,
+          paramsSerializer: paramsSerializer,
+          withCredentials: true,
+          headers: {
+            "x-discolike-key": "5130dbdc-9bbb-4254-94d8-25d8b4a8ee1e",
+            "X-Client-Id": user_id,
+          },
+        }
+      );
+      const data = response.data;
 
 			if (response.status === 200) {
 				const creditAmount = params.nl_match ? 2 : 1
@@ -114,4 +114,4 @@ Deno.serve({ port: 8000 }, async (req: Request) => {
 	},
 )
 
-console.log("Server is running on http://localhost:8000")
+console.log("Server is running on http://localhost:8000");
