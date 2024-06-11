@@ -15,7 +15,6 @@ const paramsSerializer = (params: any) => {
 			searchParams.append(key, params[key])
 		}
 	}
-	console.log(searchParams.toString())
 	return searchParams.toString()
 }
 
@@ -76,7 +75,15 @@ Deno.serve({ port: 8000 }, async (req: Request) => {
 			} else {
 				console.log("No credits deducted for non-success response.")
 			}
-
+			console.log("Response From Disco Like", response.data);
+			console.log("Request Sent To Disco Like", {
+				Params: params,
+				"Params Serialized": paramsSerializer(params),
+				Headers: {
+					"x-discolike-key": "5130dbdc-9bbb-4254-94d8-25d8b4a8ee1e",
+					"X-Client-Id": user_id,
+				},
+			})
 			return new Response(JSON.stringify(data), {
 				headers: { ...corsHeaders, "Content-Type": "application/json" },
 			})
