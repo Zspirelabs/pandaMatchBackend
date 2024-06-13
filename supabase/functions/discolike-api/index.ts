@@ -95,7 +95,7 @@ Deno.serve({ port: 8000 }, async (req: Request) => {
 				"Params Serialized": paramsSerializer(params),
 				Headers: {
 					"x-discolike-key": "5130dbdc-9bbb-4254-94d8-25d8b4a8ee1e",
-					"X-Client-Id": user_id,
+					"x-client-key": user_id,
 				},
 			})
 			return new Response(JSON.stringify(data), {
