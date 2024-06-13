@@ -57,7 +57,9 @@ Deno.serve({ port: 8000 }, async (req: Request) => {
           withCredentials: true,
           headers: {
             "x-discolike-key": "5130dbdc-9bbb-4254-94d8-25d8b4a8ee1e",
-            "X-Client-Id": user_id,
+            // "X-Client-Id": user_id, changed as per client request
+            "x-client-key": user_id,
+            "x-client-level": 0,
           },
         }
       );
