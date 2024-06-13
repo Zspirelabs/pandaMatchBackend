@@ -2,6 +2,8 @@
 import { deductCredits } from "./deductCredits.ts"
 import { corsHeaders } from "../_shared/cors.ts"
 import axiosInstance from "../_shared/axiosInstance.ts";
+import updateExportCredit from "./deductExportCredits.ts";
+import supabaseAuth from '../middleware/supabaseAuth.ts';
 
 const paramsSerializer = (params: any) => {
 	const searchParams = new URLSearchParams()
@@ -37,8 +39,15 @@ Deno.serve({ port: 8000 }, async (req: Request) => {
 		}
 
     try {
+	  	
+	  const user = await supabaseAuth(req.headers.get("Authorization") || '')
+
       const body = await req.json();
       const { params, user_id } = body;
+	  
+	  if (user.id !== user_id) {
+		throw new Error("Invalid User Request");
+	  }
 
       const response = await axiosInstance.get(
         "https://api.discolike.com/v1/discover",
@@ -61,6 +70,9 @@ Deno.serve({ port: 8000 }, async (req: Request) => {
 					console.log("Deducting Credits:", creditAmount)
 					await deductCredits(user_id, creditAmount)
 					console.log("Credits Deducted Successfully:", creditAmount)
+					if (Array.isArray(response?.data)) {
+						await updateExportCredit(response.data.length, user_id)
+					}
 				} catch (deductError) {
 					return new Response(
 						JSON.stringify({

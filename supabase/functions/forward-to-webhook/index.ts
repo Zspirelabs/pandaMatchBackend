@@ -1,8 +1,9 @@
-// deno-lint-ignore-file no-explicit-any
 import { corsHeaders } from "../_shared/cors.ts";
 import axiosInstance from "../_shared/axiosInstance.ts";
+import supabaseAuth from "../middleware/supabaseAuth.ts";
 
 Deno.serve({ port: 8000 }, async (req: Request) => {
+
     if (req.method === "OPTIONS") {
         return new Response(null, {
             status: 204,
@@ -21,6 +22,7 @@ Deno.serve({ port: 8000 }, async (req: Request) => {
     }
 
     try {
+        await supabaseAuth(req.headers.get("Authorization") || "")
         const body = await req.json();
         const { data, webhookUrl } = body;
         

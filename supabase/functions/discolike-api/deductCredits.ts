@@ -1,4 +1,4 @@
-import { supabaseClient } from "./supabaseClient.ts";
+import { supabaseClient } from "../_shared/supabaseClient.ts";
 
 export const deductCredits = async (
   user_id: string,
