@@ -4,8 +4,8 @@ export const deductCredits = async (
   user_id: string,
   creditsToDeduct: number
 ) => {
-  console.log("Deducting Credits:", creditsToDeduct);
-  console.log("User ID:", user_id);
+  // console.log("Deducting Credits:", creditsToDeduct);
+  // console.log("User ID:", user_id);
   try {
 
     const { data: userData , error: fetchError } = await supabaseClient

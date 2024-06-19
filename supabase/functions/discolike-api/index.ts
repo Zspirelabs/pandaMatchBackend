@@ -4,6 +4,7 @@ import { corsHeaders } from "../_shared/cors.ts"
 import axiosInstance from "../_shared/axiosInstance.ts";
 import updateExportCredit from "./deductExportCredits.ts";
 import supabaseAuth from '../middleware/supabaseAuth.ts';
+import { increaseApiCount } from "./increaseApiCount.ts";
 
 const paramsSerializer = (params: any) => {
 	const searchParams = new URLSearchParams()
@@ -75,6 +76,7 @@ Deno.serve({ port: 8000 }, async (req: Request) => {
 					if (Array.isArray(response?.data)) {
 						await updateExportCredit(response.data.length, user_id)
 					}
+					await increaseApiCount(user_id);
 				} catch (deductError) {
 					return new Response(
 						JSON.stringify({
@@ -89,7 +91,7 @@ Deno.serve({ port: 8000 }, async (req: Request) => {
 			} else {
 				console.log("No credits deducted for non-success response.")
 			}
-			console.log("Response From Disco Like", response.data);
+			// console.log("Response From Disco Like", response.data);
 			console.log("Request Sent To Disco Like", {
 				Params: params,
 				"Params Serialized": paramsSerializer(params),
