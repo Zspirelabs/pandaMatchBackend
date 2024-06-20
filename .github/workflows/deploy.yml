@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - main
-      - production
-      - beta
-      - dev-ayush
-      - deg-griffin
   workflow_dispatch:
 
 jobs:
