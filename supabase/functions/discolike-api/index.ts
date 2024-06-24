@@ -4,7 +4,6 @@ import { corsHeaders } from "../_shared/cors.ts"
 import axiosInstance from "../_shared/axiosInstance.ts";
 import updateExportCredit from "./deductExportCredits.ts";
 import supabaseAuth from '../middleware/supabaseAuth.ts';
-import { increaseApiCount } from "./increaseApiCount.ts";
 
 const paramsSerializer = (params: any) => {
 	const searchParams = new URLSearchParams()
@@ -41,14 +40,18 @@ Deno.serve({ port: 8000 }, async (req: Request) => {
 
     try {
 	  	
-	  const user = await supabaseAuth(req.headers.get("Authorization") || '')
+	//   const user = await supabaseAuth(req.headers.get("Authorization") || '')
 
       const body = await req.json();
-      const { params, user_id } = body;
-	  
-	  if (user.id !== user_id) {
-		throw new Error("Invalid User Request");
-	  }
+      const { params } = body;
+	  const user_id = req.headers.get("x-client-key");
+	  console.log("User ID:", user_id)
+
+	//   if (user.id !== user_id) {
+	// 	throw new Error("Invalid User Request");
+	//   }
+
+	
 
       const response = await axiosInstance.get(
         "https://api.discolike.com/v1/discover",
@@ -76,7 +79,6 @@ Deno.serve({ port: 8000 }, async (req: Request) => {
 					if (Array.isArray(response?.data)) {
 						await updateExportCredit(response.data.length, user_id)
 					}
-					await increaseApiCount(user_id);
 				} catch (deductError) {
 					return new Response(
 						JSON.stringify({
@@ -88,10 +90,11 @@ Deno.serve({ port: 8000 }, async (req: Request) => {
 						}
 					)
 				}
+				// increase api call count
 			} else {
 				console.log("No credits deducted for non-success response.")
 			}
-			// console.log("Response From Disco Like", response.data);
+			console.log("Response From Disco Like", response.data);
 			console.log("Request Sent To Disco Like", {
 				Params: params,
 				"Params Serialized": paramsSerializer(params),
