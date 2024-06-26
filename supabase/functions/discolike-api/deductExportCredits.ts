@@ -12,16 +12,17 @@ const updateExportCredit = async (count: number, user_id: string) => {
     .eq("user_id", user_id)
     .single();
 
-//   console.log(data);
+  //   console.log(data);
 
   if (error) {
     throw new Error(error.message);
   }
 
-  if (data.export_credits < 0) {
-    calculatedexportcredit = 0;
-  } else {
-    calculatedexportcredit = parseInt(data.export_credits) - count;
+  calculatedexportcredit = parseInt(data.export_credits) - count;
+
+
+  if (calculatedexportcredit < 0) {
+    calculatedexportcredit = 0
   }
 
   const mixpaneltrigger = (calculatedexportcredit, user_id) => {

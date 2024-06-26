@@ -94,7 +94,7 @@ Deno.serve({ port: 8000 }, async (req: Request) => {
 			} else {
 				console.log("No credits deducted for non-success response.")
 			}
-			console.log("Response From Disco Like", response.data);
+			// console.log("Response From Disco Like", response.data);
 			console.log("Request Sent To Disco Like", {
 				Params: params,
 				"Params Serialized": paramsSerializer(params),
