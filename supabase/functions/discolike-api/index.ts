@@ -51,6 +51,9 @@ Deno.serve({ port: 8000 }, async (req: Request) => {
 	// 	throw new Error("Invalid User Request");
 	//   }
 
+	if(!user_id){
+		throw new Error("Invalid User");
+	}
 	
 
       const response = await axiosInstance.get(
@@ -90,11 +93,9 @@ Deno.serve({ port: 8000 }, async (req: Request) => {
 						}
 					)
 				}
-				// increase api call count
 			} else {
 				console.log("No credits deducted for non-success response.")
 			}
-			// console.log("Response From Disco Like", response.data);
 			console.log("Request Sent To Disco Like", {
 				Params: params,
 				"Params Serialized": paramsSerializer(params),
