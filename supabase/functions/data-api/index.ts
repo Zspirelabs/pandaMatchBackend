@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
     const rateLimitCheck = await checkRateLimit(userId);
     if (!rateLimitCheck.allowed) {
       return new Response(rateLimitCheck.error, {
-        status: 429,
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
