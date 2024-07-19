@@ -15,7 +15,7 @@ Deno.serve({ port: 8000 }, async (req: Request) => {
 		})
 	}
 
-	const url = new URL(req.url, `http://${req.headers.get("host")}`)
+	const url = new URL(req.url)
 
 	const pathname = url.pathname.replace("/coupons", "")
 	console.log("out")
