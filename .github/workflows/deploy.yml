@@ -24,6 +24,7 @@ jobs:
       - run: |
           supabase functions deploy ping --project-ref $PROJECT_ID --no-verify-jwt
           supabase functions deploy discolike-api --project-ref $PROJECT_ID --no-verify-jwt
+          supabase functions deploy data-api --project-ref $PROJECT_ID --no-verify-jwt
           supabase functions deploy forward-to-webhook --project-ref $PROJECT_ID --no-verify-jwt
           supabase functions deploy coupons --project-ref $PROJECT_ID --no-verify-jwt
           supabase functions deploy generate-api-key --project-ref $PROJECT_ID --no-verify-jwt
