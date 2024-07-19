@@ -83,7 +83,7 @@ async function checkRateLimit(userId) {
     .update({
       request_count: newRequestCount,
       last_request: currentTime.toISOString(),
-      credits: data.credits - 1,
+      // credits: data.credits - 1,
     })
     .eq("user_id", userId);
 
@@ -179,7 +179,9 @@ Deno.serve(async (req) => {
     await supabase
       .from("user_info")
       .update({
-        export_credits: export_credits
+        export_credits: export_credits,
+        credits: data.credits - 1
+
       })
       .eq("user_id", userId);
 
