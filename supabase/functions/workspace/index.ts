@@ -1,18 +1,6 @@
 import { supabaseClient } from "../_shared/supabaseClient.ts"
 import { corsHeaders } from "../_shared/cors.ts"
-import process from "node:process"
-interface WorkspaceMember {
-	user_id: string
-	email: string
-	role: string
-}
 
-const server_end_point = "https://aakbcwmokrispvbkgwjf.supabase.co/functions/v1"
-
-const client_endpoint =
-	process.env.NODE_ENV !== "production"
-		? "http://localhost:3000"
-		: "https://app.pandamatch.io"
 
 Deno.serve(async (req) => {
 	// Handle preflight requests for CORS
@@ -25,195 +13,22 @@ Deno.serve(async (req) => {
 			},
 		})
 	}
-
-	// Only allow GET requests
-	if (req.method !== "GET") {
+	if (req.method !== "POST") {
 		return new Response(JSON.stringify({ message: "Invalid method" }), {
 			status: 404,
 			headers: { ...corsHeaders, "Content-Type": "application/json" },
 		})
 	}
 
-	
 	const url = new URL(req.url)
-	const code = url.searchParams.get("code")
 	const body = await req.json()
-	const id = url.searchParams.get("id")
 	const pathname = url.pathname.replace("/workspace", "")
 
-	if (pathname === "/invitations/accept") {
-		if (!code || !id) {
-			return new Response(
-				JSON.stringify({ message: "Missing code or id in query parameters" }),
-				{
-					status: 400,
-					headers: { ...corsHeaders, "Content-Type": "application/json" },
-				}
-			)
-		}
-		
+	if (pathname === "/update-member") {
 		try {
-			const { data: invitationData, error: invitationError } =
-				await supabaseClient
-					.from("invitations")
-					.select("*")
-					.eq("invitation_code", code)
-					.eq("id", id)
-					.single()
+			const { workspace_id, user_id, role } = body
 
-			if (invitationError) {
-				console.error(invitationError.message)
-				return new Response(
-					JSON.stringify({ message: "Error fetching invitation data" }),
-					{
-						status: 500,
-						headers: { ...corsHeaders, "Content-Type": "application/json" },
-					}
-				)
-			}
-
-			if (invitationData) {
-				if (invitationData.status === "pending") {
-					// Get user current workspace details
-					const { data: userData, error: userError } = await supabaseClient
-						.from("user_info")
-						.select("*")
-						.eq("email", invitationData.email)
-						.single()
-					console.log(userData)
-
-					if (userError) {
-						console.log(invitationData)
-						console.error(userError.message, "No an user.")
-						return Response.redirect(`${client_endpoint}/auth`)
-					}
-
-					const { data: workspaceData, error: workspaceError } =
-						await supabaseClient
-							.from("workspace_members")
-							.select("*")
-							.eq("user_id", userData.user_id)
-							.single()
-
-					if (workspaceError) {
-						console.log(userData.user_id)
-						console.error(workspaceError.message)
-						return new Response(
-							JSON.stringify({ message: "Error fetching workspace data" }),
-							{
-								status: 500,
-								headers: {
-									...corsHeaders,
-									"Content-Type": "application/json",
-								},
-							}
-						)
-					}
-
-					console.log(workspaceData, "workspace")
-
-					if (workspaceData.role === "owner") {
-						console.log(userData.email)
-						const url = `${server_end_point}/stripe/get-subscription`
-						const response = await fetch(url, {
-							method: "POST",
-							body: JSON.stringify({
-								email: userData.email,
-							}),
-						})
-						const data = await response.json()
-
-						// if the owner is a paid user? (he can't leave this workspace.)
-						if (data?.subscription?.status === "active") {
-							return Response.redirect(
-								`${client_endpoint}/invitations?reason="You currently hold the role of owner within our premium workspace subscription."`
-							)
-						} else {
-							const { data: workspaceMembers } = await supabaseClient
-								.from("workspace_members")
-								.select("*")
-								.eq("workspace_id", workspaceData.workspace_id)
-
-							//transfer all the members to a new workspace
-							workspaceMembers?.forEach(async (member: WorkspaceMember) => {
-								if (member.role === "member") {
-									// create new default workspace for each members
-									const { data: newWorkspace } = await supabaseClient
-										.from("workspaces")
-										.insert({
-											name: "My Workspace",
-											owner_id: member.user_id,
-										})
-										.select()
-										.single()
-
-									// change them as owners to new workspace
-									await supabaseClient
-										.from("workspace_members")
-										.update({
-											workspace_id: newWorkspace.id,
-											role: "owner",
-										})
-										.eq("user_id", member.user_id)
-								} else if (member.role === "owner") {
-									// change him as member to the invited workspace
-									await supabaseClient
-										.from("workspace_members")
-										.update({
-											workspace_id: invitationData.workspace_id,
-											role: "member",
-										})
-										.eq("user_id", userData.user_id)
-								}
-							})
-							console.log("done")
-							console.log(workspaceData)
-
-							// finally delete the previous workspace
-							const { data, error } = await supabaseClient
-								.from("workspaces")
-								.delete()
-								.eq("id", workspaceData.workspace_id)
-
-							console.log(error, "error")
-						}
-
-						// Update the status of the invitation to accepted
-						await supabaseClient
-							.from("invitations")
-							.update({ status: "accepted" })
-							.eq("invitation_code", code)
-							.eq("id", id)
-
-						return Response.redirect(
-							`${client_endpoint}/invitations?success=true`
-						)
-					} else if (workspaceData.role === "member") {
-						// you can't proceed as a member, leave your current workspace first.
-						return Response.redirect(
-							`${client_endpoint}/invitations?reason="You are already a member of another workspace. Please leave your current workspace before joining a new one."`
-						)
-					}
-				} else {
-					return Response.redirect(
-						`${client_endpoint}/invitations?reason=Invitation expired! it is no longer available`
-					)
-				}
-			}
-		} catch (err) {
-			console.error(err.message)
-			return new Response(
-				JSON.stringify({ message: "Internal Server Error" }),
-				{
-					status: 500,
-					headers: { ...corsHeaders, "Content-Type": "application/json" },
-				}
-			)
-		}
-	} else if (pathname === "/update-member") {
-		try {
-			const {workspace_id, user_id, role} = body
-			await supabaseClient
+			const { data, error } = await supabaseClient
 				.from("workspace_members")
 				.update({
 					workspace_id: workspace_id,
@@ -221,6 +36,13 @@ Deno.serve(async (req) => {
 				})
 				.eq("user_id", user_id)
 
+			console.error(error?.message)
+			console.error(error)
+
+			return new Response(JSON.stringify({ message: data }), {
+				status: 200,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			})
 		} catch (err) {
 			console.error(err.message)
 			return new Response(
@@ -231,5 +53,343 @@ Deno.serve(async (req) => {
 				}
 			)
 		}
+	} else if (pathname === "/fetch-all") {
+		try {
+			const { workspace_id } = body
+
+			const { data: workspace, error: workspaceError } = await supabaseClient
+				.from("workspaces")
+				.select("name, owner_id, id")
+				.eq("id", workspace_id)
+				.single()
+
+			if (workspaceError) {
+				throw new Error(workspaceError.message)
+			}
+
+			return new Response(JSON.stringify({ workspace: workspace }), {
+				status: 200,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			})
+		} catch (err) {
+			console.error(err.message)
+			return new Response(
+				JSON.stringify({ message: "Internal Server Error" }),
+				{
+					status: 500,
+					headers: { ...corsHeaders, "Content-Type": "application/json" },
+				}
+			)
+		}
+	} else if (pathname === "/update-name"){
+		try {
+			const { workspace_name, id } = body
+
+			const { data, error } = await supabaseClient
+					.from("workspaces")
+					.update({ name: workspace_name })
+					.eq("id", id)
+
+			if (error) {
+				throw new Error(error.message)
+			}
+
+			return new Response(JSON.stringify({ message: data }), {
+				status: 200,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			})
+		} catch (err) {
+			console.error(err.message)
+			return new Response(
+				JSON.stringify({ message: err.message}),
+				{
+					status: 500,
+					headers: { ...corsHeaders, "Content-Type": "application/json" },
+				}
+			)
+		}
+	} else if (pathname === "/create"){
+		try {
+			const { owner_id } = body
+
+				const { data: newWorkspace, error } = await supabaseClient
+									.from("workspaces")
+									.insert({ name: "My Workspace", owner_id: owner_id })
+									.select()
+									.maybeSingle()
+
+			if (error) {
+				throw new Error(error.message)
+			}
+
+			return new Response(JSON.stringify({ newWorkspace: newWorkspace }), {
+				status: 200,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			})
+
+		} catch (err) {
+			console.error(err.message)
+			return new Response(
+				JSON.stringify({ message: err.message }),
+				{
+					status: 500,
+					headers: { ...corsHeaders, "Content-Type": "application/json" },
+				}
+			)
+		}
+	} else if (pathname === "/delete"){
+		try {
+			const { workspace_id } = body
+
+			const { data, error } = await supabaseClient
+				.from("workspaces")
+				.delete()
+				.eq("id", workspace_id)
+
+			if (error) {
+				throw new Error(error.message)
+			}
+
+			return new Response(JSON.stringify({ message: data }), {
+				status: 200,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			})
+		} catch (err) {
+			console.error(err.message)
+			return new Response(
+				JSON.stringify({ message: err.message}),
+				{
+					status: 500,
+					headers: { ...corsHeaders, "Content-Type": "application/json" },
+				}
+			)
+		}
+	} else if (pathname === "/get-member"){
+		try {
+			const { user_id } = body
+
+			const { data: currentUser, error: currentUserError } = await supabaseClient
+				.from("workspace_members")
+				.select("*")
+				.eq("user_id", user_id)
+				.single()
+
+			if (currentUserError) {
+				throw new Error(currentUserError.message)
+			}
+
+			return new Response(JSON.stringify({ currentUser: currentUser }), {
+				status: 200,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			})
+		} catch (err) {
+			console.error(err.message)
+			return new Response(JSON.stringify({ message: err.message }), {
+				status: 500,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			})
+		}
+	} else if (pathname === "/get-all-members"){
+
+		try {
+			const { workspace_id } = body
+			console.log(workspace_id)
+
+		const { data: members, error: membersError } = await supabaseClient
+			.from("workspace_members")
+			.select("role, user_id")
+			.eq("workspace_id", workspace_id)
+
+			if (membersError) {
+				throw new Error(membersError.message)
+			}
+
+			return new Response(JSON.stringify({ members: members }), {
+				status: 200,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			})
+		} catch (err) {
+			console.error(err.message)
+			return new Response(
+				JSON.stringify({ message: err.message}),
+				{
+					status: 500,
+					headers: { ...corsHeaders, "Content-Type": "application/json" },
+				}
+			)
+		}
+
+		
+	}else if (pathname === "/delete-member"){
+		try {
+			const { user_id } = body
+
+			const { data, error } = await supabaseClient
+				.from("workspace_members")
+				.delete()
+				.eq("user_id", user_id)
+
+			if (error) {
+				throw new Error(error.message)
+			}
+
+			return new Response(JSON.stringify({ data: data }), {
+				status: 200,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			})
+		} catch (err) {
+			console.error(err.message)
+			return new Response(JSON.stringify({ message: err.message }), {
+				status: 500,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			})
+		}
+	}
+	else if (pathname === "/add-invitation"){
+		try {
+			const { workspace_id,
+							email,
+							invited_by,
+							invitation_code} = body
+
+		const { data, error } = await supabaseClient
+			.from("invitations")
+			.insert([
+				{
+					workspace_id: workspace_id,
+					email: email,
+					invited_by: invited_by,
+					invitation_code: invitation_code,
+				},
+			])
+			.select()
+
+			if (error) {
+				throw new Error(error.message)
+			}
+
+			return new Response(JSON.stringify({ data: data }), {
+				status: 200,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			})
+		} catch (err) {
+			console.error(err.message)
+			return new Response(JSON.stringify({ message: err.message }), {
+				status: 500,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			})
+		}
+	} else if (pathname === "/get-invitations"){
+
+		try {
+			const { workspace_id } = body
+
+			const { data: invitations, error } = await supabaseClient
+				.from("invitations")
+				.select("*")
+				.eq("workspace_id", workspace_id)
+
+			if (error) {
+				throw new Error(error.message)
+			}
+
+			return new Response(JSON.stringify({ invitations: invitations }), {
+				status: 200,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			})
+		} catch (err) {
+			console.error(err.message)
+			return new Response(JSON.stringify({ message: err.message }), {
+				status: 500,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			})
+		}
+	} else if (pathname === "/initialize-workspace"){
+		
+		try {
+			const { user_id } = body
+
+			const { data: workspace, error } = await supabaseClient
+				.from("workspaces")
+				.insert({ name: "My Workspace", owner_id: user_id })
+				.select()
+				.maybeSingle()
+
+			if (error) {
+				throw new Error(error.message)
+			}
+
+			const {data: member , error: memberError} = await supabaseClient
+				.from("workspace_members")
+				.insert({"workspace_id": workspace.id, "user_id": user_id, "role": "owner" })
+				.select();
+			
+			if(memberError){
+				throw new Error(memberError.message)
+			}
+
+			return new Response(JSON.stringify({ currentUser: member }), {
+				status: 200,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			})
+		} catch (err) {
+			console.error(err.message)
+			return new Response(JSON.stringify({ message: err.message }), {
+				status: 500,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			})
+		}
+	}else if (pathname === "/get-credits"){
+
+	try {
+		const { owner_id } = body
+
+		const { data: ownerInfo, error: ownerInfoError } = await supabaseClient
+			.from("user_info")
+			.select("credits")
+			.eq("user_id", owner_id)
+			.single()
+
+		if (ownerInfoError) {
+			throw new Error(ownerInfoError.message)
+		}
+
+		return new Response(JSON.stringify({ ownerInfo: ownerInfo }), {
+			status: 200,
+			headers: { ...corsHeaders, "Content-Type": "application/json" },
+		})
+	} catch (err) {
+		console.error(err.message)
+		return new Response(JSON.stringify({ message: err.message }), {
+			status: 500,
+			headers: { ...corsHeaders, "Content-Type": "application/json" },
+		})
+	}
+
+	} else if (pathname === "/get-emails"){
+			try {
+				const { userIds } = body
+
+				const { data: users, error: usersError } = await supabaseClient
+					.from("user_info")
+					.select("user_id, email")
+					.in("user_id", userIds)
+
+				if (usersError) {
+					throw new Error(usersError.message)
+				}
+
+				return new Response(JSON.stringify({ users: users }), {
+					status: 200,
+					headers: { ...corsHeaders, "Content-Type": "application/json" },
+				})
+			} catch (err) {
+				console.error(err.message)
+				return new Response(JSON.stringify({ message: err.message }), {
+					status: 500,
+					headers: { ...corsHeaders, "Content-Type": "application/json" },
+				})
+			}
+
 	}
 })
