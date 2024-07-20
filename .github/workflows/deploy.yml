@@ -29,3 +29,5 @@ jobs:
           supabase functions deploy coupons --project-ref $PROJECT_ID --no-verify-jwt
           supabase functions deploy generate-api-key --project-ref $PROJECT_ID --no-verify-jwt
           supabase functions deploy stripe --project-ref $PROJECT_ID --no-verify-jwt
+          supabase functions deploy workspace --project-ref $PROJECT_ID --no-verify-jwt
+          supabase functions deploy accept-invitation --project-ref $PROJECT_ID --no-verify-jwt
