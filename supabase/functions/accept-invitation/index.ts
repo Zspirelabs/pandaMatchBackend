@@ -12,7 +12,7 @@ const server_end_point = "https://aakbcwmokrispvbkgwjf.supabase.co/functions/v1"
 const client_endpoint =
 	process.env.NODE_ENV !== "production"
 		? "http://localhost:3000"
-		: "https://app.pandamatch.io"
+		: "https://beta.pandamatch.io"
 
 Deno.serve(async (req) => {
 	// Handle preflight requests for CORS

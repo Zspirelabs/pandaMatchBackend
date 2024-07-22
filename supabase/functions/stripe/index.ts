@@ -7,7 +7,7 @@ import stripe from "./stripeInstance.ts";
 const client_endpoint =
 	process.env.NODE_ENV !== "production"
 		? "http://localhost:3001"
-		: "https://app.pandamatch.io"
+		: "https://beta.pandamatch.io"
 
 
 Deno.serve({ port: 8000 }, async (req: Request) => {

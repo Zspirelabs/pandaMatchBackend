@@ -4,7 +4,7 @@ import process from "node:process";
 const client_endpoint =
 	process.env.NODE_ENV !== "production"
 		? "http://localhost:3001"
-		: "https://app.pandamatch.io"
+		: "https://beta.pandamatch.io"
 
 
 
